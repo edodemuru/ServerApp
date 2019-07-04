@@ -46,7 +46,7 @@ namespace ServerApp
             //Register functions to events of background worker
             Server.DoWork += Server_DoWork;
             Server.ProgressChanged += Esp32ConfigurationCompleted;
-
+            //Start server operations
             Server.RunWorkerAsync();
         }
 
@@ -82,6 +82,7 @@ namespace ServerApp
             }
         }
 
+        //Events called when server starts operations
         private void Server_DoWork(object sender, DoWorkEventArgs e)
         {
             //Activate Server
