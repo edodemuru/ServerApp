@@ -1,0 +1,13 @@
+﻿<Window x:Class="ServerApp.EspConnection"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ServerApp"
+        mc:Ignorable="d"
+        Title="Configurazione" Height="190" Width="300" MinHeight="10" MinWidth="300" ResizeMode="CanResizeWithGrip" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <TextBlock HorizontalAlignment="Center" Height="24" Margin="10,56,10,79" TextWrapping="Wrap" Text="Connetti le schede alla corrente" VerticalAlignment="Center" Width="272" FontFamily="Tw Cen MT" FontWeight="Bold" FontSize="16" TextAlignment="Center"/>
+
+    </Grid>
+</Window>
