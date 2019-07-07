@@ -148,7 +148,9 @@ namespace ServerApp
 
         private void UpdateCoordinatePanel()
         {
+           
             int i = 0;
+
             while (i != numEsp32)
             {
                 i++;

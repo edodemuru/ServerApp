@@ -48,20 +48,22 @@ namespace ServerApp
             Server.ProgressChanged += Esp32ConfigurationCompleted;
             //Start server operations
             Server.RunWorkerAsync();
+            KeyUp += CloseDialogBox;
+            
         }
 
         private void CloseDialogBox(object sender, KeyEventArgs e)
         {
-            //if (e.Key == Key.E)
-            //{
+            if (e.Key == Key.E)
+            {
                 
-                MainWindow mainWindow = new MainWindow();
-                App.Current.MainWindow = mainWindow;
+                Localization locWindow = new Localization(Esp32Devices);
+                App.Current.MainWindow = locWindow;
                 this.Close();
                 this.Owner.Close();
-                mainWindow.Show();
+                locWindow.Show();
 
-            //}
+            }
         }
 
         //First part of Server Work
@@ -73,11 +75,11 @@ namespace ServerApp
                 Console.WriteLine("All Esp32 connected to Server");
 
                 //Close dialog box
-                MainWindow mainWindow = new MainWindow();
-                App.Current.MainWindow = mainWindow;
+                Localization locWindow = new Localization(Esp32Devices);
+                App.Current.MainWindow = locWindow;
                 this.Close();
                 this.Owner.Close();
-                mainWindow.Show();
+                locWindow.Show();
 
             }
         }
