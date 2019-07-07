@@ -8,19 +8,25 @@ using System.Threading;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using MySql.Data.MySqlClient;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Complex;
 
 namespace ServerApp
 {
     
-    class SnifferServer:BackgroundWorker
+    public class SnifferServer:BackgroundWorker
     {
 
         private int numEsp32;
         private List<Device> esp32;
+        private List<Device> list_devices;
 
         //Property to modify number of Esp32
         public int NumEsp32 { get => numEsp32; set => numEsp32 = value; }
         public List<Device> Esp32 { get => esp32; set => esp32 = value; }
+        public List<Device> List_Devices { get => list_devices; set => list_devices = value; }
+
 
         public SnifferServer(List<Device> esp32List)
         {
@@ -57,9 +63,9 @@ namespace ServerApp
                 List<string> macEsp32 = new List<string>();
 
                 //Get last id from db
-                /*int firstIdDB = PacketFactory.Instance.GetPacketMaxId() + 1;
+                int firstIdDB = PacketFactory.Instance.GetPacketMaxId() + 1;
                 int lastIdDB = firstIdDB;
-                PacketFactory.Instance.NumEsp32 = numEsp32;*/
+                PacketFactory.Instance.NumEsp32 = numEsp32;
 
                 //List of esp32
                 //List<Device> esp32 = new List<Device>();
@@ -173,11 +179,208 @@ namespace ServerApp
                             }
 
                         }
-                        
+                        else
+                        {
+                            Console.WriteLine("Next Connection");
+                            //First esp32 to connect after first connection
+                            if (numEspTemp == 0)
+                            {
+                                Console.WriteLine("First esp32 to connect after first connection");
+                                timestamp = GetNetworkTime();
+                                Console.WriteLine("Current time " + timestamp.ToString());
+                                timestampModified = timestamp.AddMinutes(0.2);
+                                Console.WriteLine("Time when esp32 will start working " + timestampModified.ToString());
+
+                            }
+                            numEspTemp++;
+
+                            dataToSend = timestampModified.ToString();
+
+                            Console.WriteLine("Esp32 Connected:");
+                            foreach (var item in macEsp32)
+                            {
+                                Console.WriteLine(item.ToString());
+                            }
+
+                            //Packets Managment
+                            foreach (String packetData in dataReceivedParsed)
+                            {
+                                //Mac information must not be memorized into db
+                                if (packetData.Equals(dataReceivedParsed[0]) || packetData.Equals("EOF"))
+                                    continue;
+                                Packet packet = new Packet();
+                                String[] packetDataParsed = packetData.Split(',');
+                                packet.Ssid = packetDataParsed[0];
+                                packet.Channel = Int32.Parse(packetDataParsed[1]);
+                                packet.Rssi = Int32.Parse(packetDataParsed[2]);
+                                packet.MacSource = packetDataParsed[3];
+                                packet.Timestamp = packetDataParsed[4];
+                                packet.Hash = packetDataParsed[5];
+                                packet.MacEsp32 = dataReceivedParsed[0];
+                                packet.Id = lastIdDB;
+                                lastIdDB++;
+
+                                try
+                                {
+                                    PacketFactory instance = PacketFactory.Instance;
+                                    instance.InsertPacket(packet);
+                                }
+                                catch (MySqlException e)
+                                {
+                                    Console.WriteLine(e.ToString());
+                                }
+
+
+
+                            }
+                            Console.WriteLine("Insert into DB completed");
+                            ReportProgress(2);
+
+                            //Last esp32
+                            if (numEspTemp == macEsp32.Count)
+                            {
+                                Console.WriteLine("Last esp32 to connect after first connection");
+                                numEspTemp = 0;
+
+
+                                //DATA ANALYSIS
+                                //Obtain packets received from all esp32
+                                List<String> hashPkFiltered = PacketFactory.Instance.GetListHashFiltered(firstIdDB);
+                                //create list of current position devices
+                                list_devices = new List<Device>();
+                                //For each hash, obtain the most recent packets received from all esp32
+                                foreach (String hash in hashPkFiltered)
+                                {
+                                    //Packet List Ordered by mac esp32
+                                    List<Packet> pkFiltered = PacketFactory.Instance.GetListPkFilteredFromHash(hash, firstIdDB);
+                                    //Console.WriteLine("Id packets filtered:");
+
+                                    //**LEAST SQUARE ESTIMATION METHOD**/ ->see page 9 of the pdf: "sensors"
+
+                                    double[] startVectorb = new double[numEsp32 - 1]; //b vector
+
+                                    Matrix<double> aMatrix = Matrix<double>.Build.Dense(numEsp32 - 1, 2); //matrix A
+                                    Vector<double> coordinate = Vector<double>.Build.Dense(2); //row of Matrix A
+                                    double rm = GetDistanceFromRssi(pkFiltered[numEsp32 - 1].Rssi); //distance from the last esp32
+                                                                                                    //TO REMEMBER: WE ARE USING PKFILTERED AS REFERENCE VECTOR WITH THE POSITIONS
+                                                                                                    /* int q = 0; //index of the last esp32
+                                                                                                     for (int t = 0; t < numEsp32 - 1; t++)
+                                                                                                     {
+                                                                                                         if (esp32[t].Mac.Equals(pkFiltered[numEsp32-1].MacEsp32))
+                                                                                                             q = t;
+                                                                                                     }*/
+
+
+                                    for (int i = 0; i < numEsp32 - 1; i++)
+                                    {
+                                        //distanza i-esima rilevata dalla i-esima esp32
+                                        double ri = GetDistanceFromRssi(pkFiltered[i].Rssi);
+
+                                        /*int s = 0; //index of the current esp32 that contain the device
+                                        for (int k = 0; k < numEsp32 - 1; k++)
+                                        {
+                                            if (esp32[k].Mac.Equals(pkFiltered[i].MacEsp32))
+                                                s = k;
+                                        }*/
+
+
+
+                                        startVectorb[i] = Math.Pow(esp32[i].X, 2) - Math.Pow(esp32[numEsp32 - 1].X, 2) + Math.Pow(esp32[i].Y, 2) - Math.Pow(esp32[numEsp32 - 1].Y, 2) + Math.Pow(ri, 2) - Math.Pow(rm, 2);
+
+                                        // System.Console.WriteLine("Riga " + i + " vettore b " + startVectorb[i]);
+                                        coordinate[0] = 2 * (esp32[i].X - esp32[numEsp32 - 1].X);
+                                        coordinate[1] = 2 * (esp32[i].Y - esp32[numEsp32 - 1].Y);
+                                        // System.Console.WriteLine("Coordinata 0 + " + coordinate[0] + " Coordinata 1 + " + coordinate[1]);
+                                        //aMatrix = aMatrix.InsertRow(i, coordinate); //built A matrix by row
+                                        aMatrix.SetRow(i, coordinate);
+                                        // System.Console.WriteLine("Costruziona Matrice A : " + aMatrix.);
+                                    }
+
+                                    Vector<double> bVector = Vector<double>.Build.Dense(startVectorb);
+
+                                    var posResult = ((aMatrix.Transpose() * aMatrix).Inverse()) * (aMatrix.Transpose()) * bVector; // to check NAN 
+
+                                    //xy cordinate based on the 4 most recent packets sniffed with the same hash
+                                    double[] position = posResult.ToArray();
+
+                                    //now we verify the identity of the device by selecting the mac_source of one of the 4 packets
+                                    //if alredy present into list of position we update otherwise insert new device position
+
+                                    //no matter which packet consider because they have the same mac source, to simplify choose 0
+                                    Device tmp_p = new Device((pkFiltered[0].MacSource), position[0], position[1], pkFiltered[0].Timestamp);
+                                    int found = 0;
+
+                                    list_devices.Add(tmp_p);
+                                    Console.WriteLine("ID: " + pkFiltered[0].Id + " Mac device: " + tmp_p.Mac + " Coordinate: " + tmp_p.X + " " + tmp_p.Y);
+
+                                    
+
+
+                                    /*
+                                                                        foreach (Device p in list_devices)
+                                                                         {
+                                                                             if (p.Mac.Equals(tmp_p.Mac))
+                                                                             {
+
+                                                                                 found++;
+                                                                                 //check the timestamp of the previuos one to verify if is greater or less
+                                                                                 DateTime oldtime = DateTime.Parse(p.Time);
+                                                                                 DateTime newtime = DateTime.Parse(tmp_p.Time);
+
+                                                                                 if (DateTime.Compare(newtime, oldtime) > 0)
+                                                                                 {
+                                                                                     p.X = tmp_p.X;
+                                                                                     p.Y = tmp_p.Y;
+
+                                                                                 }
+                                                                             }
+
+                                                                         }*/
+
+                                    /*if (found == 0)
+                                    {
+                                        list_devices.Add(tmp_p); //insert the position of the new device sniffed 
+                                        Console.WriteLine("Mac device: " + tmp_p.Mac + "Coordinate: " + tmp_p.X + " " + tmp_p.Y);
+                                    }*/
+
+
+                                    /* if (pkFiltered[0].MacSource == "24:18:1d:e3:6d:c3" || pkFiltered[0].MacSource == "d0:57:7b:f0:d2:0a")
+                                     {
+                                         Console.WriteLine("Id: " + pkFiltered[0].Id + " Distanza da scheda 1 " + GetDistanceFromRssi(pkFiltered[0].Rssi) + " Metri");
+                                        // Console.WriteLine("Id: " + pkFiltered[1].Id + " Distanza da scheda 2 " + GetDistanceFromRssi(pkFiltered[1].Rssi) + " Metri");
+                                         //Console.WriteLine("Id: " + pkFiltered[2].Id + " Distanza da scheda 2 " + GetDistanceFromRssi(pkFiltered[2].Rssi) + " Metri");
+                                     }*/
+                                }
+                                ReportProgress(3);
+
+                                firstIdDB = lastIdDB;
+
+                            }
+
+                        }
 
                     }
 
-                 }
+                    if (dataToSend != "")
+                    {
+                        //Translate String to ASCII
+                        byte[] dataToSendBytes = System.Text.Encoding.ASCII.GetBytes(dataToSend);
+
+                        // Send back a response.
+                        handler.Send(dataToSendBytes, dataToSendBytes.Length, 0);
+
+                        Console.WriteLine(String.Format("Sent: {0}", dataToSend));
+                    }
+                    else
+                    {
+                        Console.WriteLine("Errore nessun dato inviato");
+                    }
+
+                    // Shutdown and end connection
+                    handler.Shutdown(SocketShutdown.Both);
+                    handler.Close();
+
+                }
 
 
             } catch (SocketException e)

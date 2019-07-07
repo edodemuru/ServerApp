@@ -257,7 +257,7 @@ namespace ServerApp
                 }
                 CoordinateTxt.Clear();
                 Coordinatex.Clear();
-                Coordinatex.Clear();
+                Coordinatey.Clear();
                 //Remove button
                 CoordinatePanel.Children.Remove(Configure);
             }

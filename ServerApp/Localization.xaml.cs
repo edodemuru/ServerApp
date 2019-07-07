@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,13 +26,17 @@ namespace ServerApp
     public partial class Localization : Window
     {
         List<Device> Esp32Devices;
-        public Localization(List<Device> Esp32Devices)
+        List<Device> Devices;
+        SnifferServer Server;
+        public Localization(List<Device> Esp32Devices,SnifferServer ServerInput)
         {
             InitializeComponent();
             this.Esp32Devices = Esp32Devices;
-            Esp32Render = new ChartValues<Esp32Label>();
-          
+            this.Server = ServerInput;
+            Server.ProgressChanged += Esp32CoordinateObtained;
 
+            Esp32Render = new ChartValues<DeviceLabel>();
+            DevicesRenderer = new ChartValues<DeviceLabel>();
             DrawEsp32(Esp32Devices);
 
 
@@ -56,8 +61,10 @@ namespace ServerApp
             
             for(int i = 0; i<Esp32Devices.Count; i++)
             {
-                Esp32Render.Add(new Esp32Label(Esp32Devices[i].X, Esp32Devices[i].Y, Esp32Devices[i].Mac));
+                Esp32Render.Add(new DeviceLabel(Esp32Devices[i].X, Esp32Devices[i].Y, Esp32Devices[i].Mac,""));
             }
+
+           
 
             var Esp32Mapper = Mappers.Xy<Esp32Label>()
                 .X(value=> value.X) //let's use the position of the item as X
@@ -65,18 +72,43 @@ namespace ServerApp
             //lets save the mapper globally
             Charting.For<Esp32Label>(Esp32Mapper);
 
+            var DeviceMapper = Mappers.Xy<DeviceLabel>()
+                   .X(value => value.X)
+                   .Y(value => value.Y);
+
+            Charting.For<DeviceLabel>(DeviceMapper);
+
+
+
 
         }
 
-       private void DrawEsp32Info(object Sender, MouseEventArgs e)
+        public void Esp32CoordinateObtained(object sender, ProgressChangedEventArgs e)
         {
-           Point coordinate =  e.GetPosition((IInputElement) Sender);
-  
-            
+            if (e.ProgressPercentage == 3)
+            {
+                Console.WriteLine("Obtained data about devices position");
+                //Clear previously data
+               if(Devices!= null)
+                    Devices.Clear();
 
+                Devices = Server.List_Devices;
+
+                foreach(Device d in Devices)
+                {
+                    DevicesRenderer.Add(new DeviceLabel(d.X, d.Y, d.Mac, "SSID: " + d.Ssid));
+                }
+
+                
+                
+
+
+            }
         }
 
-        public ChartValues<Esp32Label> Esp32Render { get; set; }
+        //Property to set value of render elements
+        public ChartValues<DeviceLabel> Esp32Render { get; set; }
+        public ChartValues<DeviceLabel> DevicesRenderer { get; set; }
 
 
 

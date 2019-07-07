@@ -43,6 +43,7 @@ namespace ServerApp
                 WorkerSupportsCancellation = true
                 
             };
+            Server.NumEsp32 = esp32Devices.Count;
             //Register functions to events of background worker
             Server.DoWork += Server_DoWork;
             Server.ProgressChanged += Esp32ConfigurationCompleted;
@@ -57,7 +58,7 @@ namespace ServerApp
             if (e.Key == Key.E)
             {
                 
-                Localization locWindow = new Localization(Esp32Devices);
+                Localization locWindow = new Localization(Esp32Devices,Server);
                 App.Current.MainWindow = locWindow;
                 this.Close();
                 this.Owner.Close();
@@ -75,7 +76,7 @@ namespace ServerApp
                 Console.WriteLine("All Esp32 connected to Server");
 
                 //Close dialog box
-                Localization locWindow = new Localization(Esp32Devices);
+                Localization locWindow = new Localization(Esp32Devices,Server);
                 App.Current.MainWindow = locWindow;
                 this.Close();
                 this.Owner.Close();
