@@ -11,6 +11,7 @@ using System.IO;
 using MySql.Data.MySqlClient;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Complex;
+using System.Globalization;
 
 namespace ServerApp
 {
@@ -21,12 +22,13 @@ namespace ServerApp
         private int numEsp32;
         private List<Device> esp32;
         private List<Device> list_devices;
+        private int numDevicesInLastMinutes;
 
         //Property to modify number of Esp32
         public int NumEsp32 { get => numEsp32; set => numEsp32 = value; }
         public List<Device> Esp32 { get => esp32; set => esp32 = value; }
         public List<Device> List_Devices { get => list_devices; set => list_devices = value; }
-
+        public int NumDevicesInLastMinutes { get => numDevicesInLastMinutes; set => numDevicesInLastMinutes = value; }
 
         public SnifferServer(List<Device> esp32List)
         {
@@ -214,7 +216,7 @@ namespace ServerApp
                                 packet.Channel = Int32.Parse(packetDataParsed[1]);
                                 packet.Rssi = Int32.Parse(packetDataParsed[2]);
                                 packet.MacSource = packetDataParsed[3];
-                                packet.Timestamp = packetDataParsed[4];
+                                packet.Timestamp = ConvertStringToDateTime(packetDataParsed[4]);
                                 packet.Hash = packetDataParsed[5];
                                 packet.MacEsp32 = dataReceivedParsed[0];
                                 packet.Id = lastIdDB;
@@ -307,7 +309,7 @@ namespace ServerApp
                                     //if alredy present into list of position we update otherwise insert new device position
 
                                     //no matter which packet consider because they have the same mac source, to simplify choose 0
-                                    Device tmp_p = new Device((pkFiltered[0].MacSource), position[0], position[1], pkFiltered[0].Timestamp);
+                                    Device tmp_p = new Device((pkFiltered[0].MacSource), position[0], position[1], pkFiltered[0].Ssid, pkFiltered[0].Timestamp);
                                     int found = 0;
 
                                     list_devices.Add(tmp_p);
@@ -351,6 +353,12 @@ namespace ServerApp
                                          //Console.WriteLine("Id: " + pkFiltered[2].Id + " Distanza da scheda 2 " + GetDistanceFromRssi(pkFiltered[2].Rssi) + " Metri");
                                      }*/
                                 }
+                                DateTime dateNow = GetNetworkTime();
+                                DateTime dateLastMinute = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day, dateNow.Hour, dateNow.Minute -1, dateNow.Second);
+
+                               
+                               
+                                numDevicesInLastMinutes = PacketFactory.Instance.GetPacketNumInInterval(dateLastMinute, dateNow);
                                 ReportProgress(3);
 
                                 firstIdDB = lastIdDB;
@@ -511,6 +519,26 @@ namespace ServerApp
             double n = 2;
             //double n = 4;
             return Math.Pow(10, (measuredPower - rssi) / (10 * n));
+        }
+
+        private DateTime ConvertStringToDateTime(String DateStr)
+        {
+            DateTime conversion;
+            
+            try
+            {
+                conversion = DateTime.ParseExact(DateStr, "ddd MMM dd HH:mm:ss yyyy", CultureInfo.InvariantCulture);
+                return conversion;
+            }
+            catch (FormatException e)
+            {
+                
+                conversion = DateTime.ParseExact(DateStr, "ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
+                return conversion;
+                
+             
+
+            }
         }
 
       

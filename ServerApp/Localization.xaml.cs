@@ -27,6 +27,7 @@ namespace ServerApp
     {
         List<Device> Esp32Devices;
         List<Device> Devices;
+        int NumDevices;
         SnifferServer Server;
         public Localization(List<Device> Esp32Devices,SnifferServer ServerInput)
         {
@@ -37,18 +38,9 @@ namespace ServerApp
 
             Esp32Render = new ChartValues<DeviceLabel>();
             DevicesRenderer = new ChartValues<DeviceLabel>();
+            NumDevicesInterval = new ChartValues<int>();
+            NumDevicesInterval.Add(0);
             DrawEsp32(Esp32Devices);
-
-
-
-            /*for (var i = 0; i < 20; i++)
-            {
-                ValuesA.Add(new ObservablePoint(r.NextDouble() * 10, r.NextDouble() * 10));
-                ValuesB.Add(new ObservablePoint(r.NextDouble() * 10, r.NextDouble() * 10));
-                ValuesC.Add(new ObservablePoint(r.NextDouble() * 10, r.NextDouble() * 10));
-            }
-
-            */
             DataContext = this;
 
         }
@@ -93,11 +85,20 @@ namespace ServerApp
                     Devices.Clear();
 
                 Devices = Server.List_Devices;
+                NumDevices = Server.NumDevicesInLastMinutes;
 
                 foreach(Device d in Devices)
                 {
                     DevicesRenderer.Add(new DeviceLabel(d.X, d.Y, d.Mac, "SSID: " + d.Ssid));
                 }
+
+                if (NumDevicesInterval.Count > 15)
+                {
+                    var lastNum = NumDevicesInterval[15]; 
+                    NumDevicesInterval.Clear();
+                    NumDevicesInterval.Add(lastNum);
+                }
+                NumDevicesInterval.Add(NumDevices);
 
                 
                 
@@ -109,6 +110,7 @@ namespace ServerApp
         //Property to set value of render elements
         public ChartValues<DeviceLabel> Esp32Render { get; set; }
         public ChartValues<DeviceLabel> DevicesRenderer { get; set; }
+        public ChartValues<int> NumDevicesInterval { get; set; }
 
 
 

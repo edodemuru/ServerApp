@@ -40,7 +40,7 @@ namespace ServerApp
                 String sqlInsert = "insert into `packets`(`Id`, `ssid`, `channel`, `rssi`, `source_mac`, `esp32_mac`, `timestamp`, `hash`) values (@Id,@SID,@Cha,@RS,@MACs,@MACe,@Time,@H)";
                 MySqlCommand cmd = new MySqlCommand(sqlInsert, databaseConnection);
                 cmd.Parameters.Add("@Id", MySqlDbType.Int32).Value = packet.Id;
-                cmd.Parameters.Add("@Time", MySqlDbType.VarChar).Value = packet.Timestamp;
+                cmd.Parameters.Add("@Time", MySqlDbType.DateTime).Value = packet.Timestamp;
                 cmd.Parameters.Add("@Cha", MySqlDbType.Int32).Value = packet.Channel;
                 cmd.Parameters.Add("@SID", MySqlDbType.VarChar).Value = packet.Ssid;
                 cmd.Parameters.Add("@RS", MySqlDbType.Int32).Value = packet.Rssi;
@@ -246,7 +246,7 @@ namespace ServerApp
                         tmp.Rssi = reader.GetInt32(3);
                         tmp.MacSource = reader.GetString(4);
                         tmp.MacEsp32 = reader.GetString(5);
-                        tmp.Timestamp = reader.GetString(6);
+                        tmp.Timestamp = reader.GetDateTime(6);
                         tmp.Hash = reader.GetString(7);
 
                         listPackets.Add(tmp);
@@ -299,7 +299,7 @@ namespace ServerApp
                         tmp.Rssi = reader.GetInt32(3);
                         tmp.MacSource = reader.GetString(4);
                         tmp.MacEsp32 = reader.GetString(5);
-                        tmp.Timestamp = reader.GetString(6);
+                        tmp.Timestamp = reader.GetDateTime(6);
                         tmp.Hash = reader.GetString(7);
 
                         listPackets.Add(tmp);
@@ -322,6 +322,48 @@ namespace ServerApp
 
             return listPackets;
         }
+
+        public int GetPacketNumInInterval(DateTime start, DateTime end)
+        {
+            int numPackets = 0;
+            try
+            {
+                MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+                databaseConnection.Open();
+                string format = "yyyy-MM-dd HH:mm:ss";
+                String sqlQuery = "select count(*) from(select * from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by source_mac) as numDevices";
+               
+
+                MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
+                MySqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    //while cicle to read the data
+                    while (reader.Read())
+                    {
+                        numPackets = reader.GetInt32(0);
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+
+                //int i = cmd.ExecuteNonQuery();
+                databaseConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("error " + ex.Message);
+                return -1;
+            }
+
+            return numPackets;
+        }
+
+       
 
         public string ConnectionString { get => connectionString; set => connectionString = value; }
         public int NumEsp32 { get => numEsp32; set => numEsp32 = value; }
