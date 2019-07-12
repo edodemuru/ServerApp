@@ -85,24 +85,30 @@ namespace ServerApp
                     Devices.Clear();
 
                 Devices = Server.List_Devices;
-                NumDevices = Server.NumDevicesInLastMinutes;
 
                 foreach(Device d in Devices)
                 {
                     DevicesRenderer.Add(new DeviceLabel(d.X, d.Y, d.Mac, "SSID: " + d.Ssid));
-                }
+                }               
 
+                
+                
+
+
+            }
+
+            else if (e.ProgressPercentage == 4){
+                NumDevices = Server.NumDevicesInLastMinutes;
+
+                //Clear graph with all values
                 if (NumDevicesInterval.Count > 15)
                 {
-                    var lastNum = NumDevicesInterval[15]; 
+                    var lastNum = NumDevicesInterval[15];
                     NumDevicesInterval.Clear();
+                    //Save last value
                     NumDevicesInterval.Add(lastNum);
                 }
                 NumDevicesInterval.Add(NumDevices);
-
-                
-                
-
 
             }
         }

@@ -23,12 +23,14 @@ namespace ServerApp
         private List<Device> esp32;
         private List<Device> list_devices;
         private int numDevicesInLastMinutes;
+        private int numConnection;
 
         //Property to modify number of Esp32
         public int NumEsp32 { get => numEsp32; set => numEsp32 = value; }
         public List<Device> Esp32 { get => esp32; set => esp32 = value; }
         public List<Device> List_Devices { get => list_devices; set => list_devices = value; }
         public int NumDevicesInLastMinutes { get => numDevicesInLastMinutes; set => numDevicesInLastMinutes = value; }
+        public int NumConnection { get => numConnection; set => numConnection = value; }
 
         public SnifferServer(List<Device> esp32List)
         {
@@ -63,6 +65,9 @@ namespace ServerApp
                 DateTime timestampModified = new DateTime();
                 //Mac of esp32 connected
                 List<string> macEsp32 = new List<string>();
+
+                //save number of connection, necessary to update number of devices graph
+                numConnection = 0;
 
                 //Get last id from db
                 int firstIdDB = PacketFactory.Instance.GetPacketMaxId() + 1;
@@ -353,12 +358,24 @@ namespace ServerApp
                                          //Console.WriteLine("Id: " + pkFiltered[2].Id + " Distanza da scheda 2 " + GetDistanceFromRssi(pkFiltered[2].Rssi) + " Metri");
                                      }*/
                                 }
-                                DateTime dateNow = GetNetworkTime();
-                                DateTime dateLastMinute = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day, dateNow.Hour, dateNow.Minute -1, dateNow.Second);
+
+                                //After 5 connections, check number of devices identified in these connections (5 connections are about 5 minute)
+                                if(numConnection == 5)
+                                {
+                                    //Actual Time
+                                    DateTime dateNow = GetNetworkTime();
+                                    // Actual Time - 5 minutes
+                                    DateTime dateLastMinute = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day, dateNow.Hour, dateNow.Minute - 5, dateNow.Second);
+                                    //Query to db
+                                    numDevicesInLastMinutes = PacketFactory.Instance.GetPacketNumInInterval(dateLastMinute, dateNow);
+                                    //Report progress so data can be visualized 
+                                    ReportProgress(4);
+                                    numConnection = 0;
+
+                                }
+                                numConnection++;
 
                                
-                               
-                                numDevicesInLastMinutes = PacketFactory.Instance.GetPacketNumInInterval(dateLastMinute, dateNow);
                                 ReportProgress(3);
 
                                 firstIdDB = lastIdDB;
