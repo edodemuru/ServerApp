@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"  
-       
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" 
         xmlns:wpf="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:local="clr-namespace:ServerApp"
@@ -11,16 +11,31 @@
         mc:Ignorable="d"
         Title="LongTermStatistics" Height="450" Width="800">
     <Grid>
-        <lvc:CartesianChart Series="{Binding SeriesCollection}" LegendLocation="None" >
+        <lvc:CartesianChart Series="{Binding SeriesCollection}" LegendLocation="None" Margin="0,0,0,46" >
             <lvc:CartesianChart.AxisY>
                 <lvc:Axis Title="Mac" Labels="{Binding Mac}"></lvc:Axis>
             </lvc:CartesianChart.AxisY>
             <lvc:CartesianChart.AxisX>
                 <lvc:Axis Title="Time" Labels="{Binding Time}"></lvc:Axis>
             </lvc:CartesianChart.AxisX>
-            
-            
         </lvc:CartesianChart>
+        <TextBlock HorizontalAlignment="Left" Margin="173,373,0,0" TextWrapping="Wrap" Text="Da:" TextAlignment="Center" VerticalAlignment="Top" Height="31" Width="67" FontSize="16" FontFamily="Segoe UI Emoji"/>
+        <TextBlock HorizontalAlignment="Left" Margin="458,373,0,0" TextWrapping="Wrap" Text="A:" TextAlignment="Center" VerticalAlignment="Top" Height="31" Width="67" FontSize="16" FontFamily="Segoe UI Emoji"/>
 
+       <!-- <DatePicker x:Name="Interval1" HorizontalAlignment="Left" Height="31" Margin="245,0,0,10" VerticalAlignment="Bottom" Width="208" SelectedDateChanged="DateChanged"/>
+        <DatePicker x:Name="Interval2" HorizontalAlignment="Left" Height="31" Margin="530,0,0,10" VerticalAlignment="Bottom" Width="208" SelectedDateChanged="DateChanged"/>-->
+        <xctk:DateTimePicker x:Name="Interval1"  
+                     Format="Custom" 
+                     FormatString="ddd MMM dd HH:mm:ss yyyy" 
+                     AutoCloseCalendar="False" ShowButtonSpinner="True"
+                     ValueChanged="DateChanged"
+                     Margin="240,373,375,20"
+                     />
+        <xctk:DateTimePicker x:Name="Interval2"  
+            Format="Custom" 
+            FormatString="ddd MMM dd HH:mm:ss yyyy" 
+            AutoCloseCalendar="False" ShowButtonSpinner="True"
+            ValueChanged="DateChanged"
+            Margin="525,373,90,20"/>
     </Grid>
 </Window>

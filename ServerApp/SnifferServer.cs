@@ -37,6 +37,11 @@ namespace ServerApp
             Esp32 = esp32List;
             numEsp32 = esp32List.Count;
         }
+        public SnifferServer(int num)
+        {
+            numEsp32 = num;
+            PacketFactory.Instance.NumEsp32 = numEsp32;
+        }
 
        public void Run()
         {
@@ -556,6 +561,27 @@ namespace ServerApp
              
 
             }
+        }
+
+        /// <summary>
+        /// Function to obtain packets inside certain interval
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        public List<Packet> LongTermStatisticsOnPK(DateTime start, DateTime end)
+        {
+            List<String> PkFound = new List<String>();
+            List<Packet> PkInInterval = new List<Packet>();
+            PkFound = PacketFactory.Instance.GetMostFrequentPackets(start, end,3);
+
+            foreach(string s in PkFound)
+            {
+                PkInInterval.AddRange(PacketFactory.Instance.GetListPacketInIntervalFromSourceMac(start, end, s));
+            }
+
+            return PkInInterval;
+
+            
         }
 
       

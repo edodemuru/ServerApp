@@ -23,6 +23,7 @@ namespace ServerApp
     /// </summary>
     public partial class LongTermStatistics : Window
     {
+        SnifferServer Server;
        // Save all date time values once for convertion into x values
        private List<DateTime> TimeIntervalGlobal;
        //List of tuple containint all interval to be processed
@@ -31,6 +32,8 @@ namespace ServerApp
         public LongTermStatistics()
         {
             InitializeComponent();
+            Server = new SnifferServer(3);
+            
 
             /*SeriesCollection = new SeriesCollection
             {
@@ -67,7 +70,7 @@ namespace ServerApp
 
 
             //Mac = new[] { "90:fd:61:45:d9:21", "86:29:1c:d3:96:f1", "20:df:b9:99:fd:4d" };
-
+            
 
             DateTime dt = new DateTime(1929, 1, 1);
             DateTime dt2 = new DateTime(1929, 1, 4);
@@ -185,6 +188,18 @@ namespace ServerApp
         public SeriesCollection SeriesCollection { get; set; }
         public List<string> Time { get; set; }
         public List<string> Mac { get; set; }
+
+        private void DateChanged(object sender, EventArgs e) {
+            
+            //Console.WriteLine( Server.ConvertStringToDateTime(Interval1.Value.ToString()).ToString());
+           if(Interval1.Value != null && Interval2.Value != null)
+            {
+                
+               // Server.LongTermStatisticsOnPK(Interval1.Value, Interval2.Value);
+
+            }
+
+        }
 
 
 

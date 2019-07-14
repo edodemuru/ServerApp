@@ -323,6 +323,7 @@ namespace ServerApp
             return listPackets;
         }
 
+        //Given time interval find number of packets in such interval
         public int GetPacketNumInInterval(DateTime start, DateTime end)
         {
             int numPackets = 0;
@@ -331,8 +332,9 @@ namespace ServerApp
                 MySqlConnection databaseConnection = new MySqlConnection(connectionString);
                 databaseConnection.Open();
                 string format = "yyyy-MM-dd HH:mm:ss";
-                String sqlQuery = "select count(*) from(select * from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by source_mac) as numDevices";
-               
+                //Old query because I haven't considered packets received by all esp32
+                //String sqlQuery = "select count(*) from(select * from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by source_mac) as numDevices";
+                String sqlQuery = "select count(*) from(select * from(select * from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by hash, esp32_mac) as filteredPackets group by HASH HAVING count(*) = " + NumEsp32 + ") as filteredData";
 
                 MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
                 MySqlDataReader reader = cmd.ExecuteReader();
@@ -363,7 +365,101 @@ namespace ServerApp
             return numPackets;
         }
 
-       
+        public List<Packet> GetListPacketInIntervalFromSourceMac(DateTime start, DateTime end, string sourceMac)
+        {
+            List<Packet> listPackets = new List<Packet>();
+            try
+            {
+                MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+                databaseConnection.Open();
+                string format = "yyyy-MM-dd HH:mm:ss";
+
+                String sqlQuery = "select * from (select * from (select* from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by hash,esp32_mac) as filteredPackets group by HASH HAVING count(*) = " + NumEsp32 + ") as filteredData where source_mac = " + sourceMac + " order by `filteredData`.`timestamp` ASC";
+                MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
+                MySqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    //while cicle to read the data
+                    while (reader.Read())
+                    {
+                        //each row from the data matched by the query
+                        Packet tmp = new Packet();
+
+                        tmp.Id = reader.GetInt32(0);
+                        tmp.Ssid = reader.GetString(1);
+                        tmp.Channel = reader.GetInt32(2);
+                        tmp.Rssi = reader.GetInt32(3);
+                        tmp.MacSource = reader.GetString(4);
+                        tmp.MacEsp32 = reader.GetString(5);
+                        tmp.Timestamp = reader.GetDateTime(6);
+                        tmp.Hash = reader.GetString(7);
+
+                        listPackets.Add(tmp);
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+
+                //int i = cmd.ExecuteNonQuery();
+                databaseConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("error " + ex.Message);
+                return null;
+            }
+
+            return listPackets;
+        }
+
+        public List<string> GetMostFrequentPackets(DateTime start , DateTime end, int NumResults)
+        {
+            List<string> packetsFound = new List<string>();
+            try
+            {
+                MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+                databaseConnection.Open();
+                string format = "yyyy-MM-dd HH:mm:ss";
+
+                String sqlQuery = "select count(*) from (select * from (select* from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by hash,esp32_mac) as filteredPackets group by HASH HAVING count(*) = " + NumEsp32 + ") as filteredData GROUP by source_mac ORDER BY `count(*)` DESC LIMIT " + NumResults;
+                MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
+                MySqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    //while cicle to read the data
+                    while (reader.Read())
+                    {
+                        //each row from the data matched by the query
+                        string tmp = reader.GetString(0);                    
+                        packetsFound.Add(tmp);
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+
+                //int i = cmd.ExecuteNonQuery();
+                databaseConnection.Close();
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine("error " + ex.Message);
+                return null;
+            }
+
+            return packetsFound;
+
+        }
+
+
 
         public string ConnectionString { get => connectionString; set => connectionString = value; }
         public int NumEsp32 { get => numEsp32; set => numEsp32 = value; }

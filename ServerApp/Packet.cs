@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ServerApp
 {
-    class Packet
+    public class Packet
     {
         private String ssid;
         private int channel;
