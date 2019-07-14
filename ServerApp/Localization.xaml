@@ -16,8 +16,8 @@
         </Grid.RowDefinitions>
         <lvc:CartesianChart Grid.Row="1" LegendLocation="Bottom" Margin="0,0,0,359">
             <lvc:CartesianChart.Series>
-                <lvc:ScatterSeries Title="Esp32Devices" Values="{Binding Esp32Render}" PointGeometry="{x:Static lvc:DefaultGeometries.Triangle}"/>
-                <lvc:ScatterSeries Title="Devices" Values="{Binding DevicesRenderer}" PointGeometry="{x:Static lvc:DefaultGeometries.Circle}" />
+                <lvc:ScatterSeries Title="Esp32Devices" Values="{Binding Esp32Render}" PointGeometry="{x:Static lvc:DefaultGeometries.Triangle}" MinPointShapeDiameter="25" MaxPointShapeDiameter="25"/>
+                <lvc:ScatterSeries Title="Devices" Values="{Binding DevicesRenderer}" PointGeometry="{x:Static lvc:DefaultGeometries.Circle}" MinPointShapeDiameter="25" MaxPointShapeDiameter="25"/>
             </lvc:CartesianChart.Series>
             <lvc:CartesianChart.AxisX>
                 <lvc:Axis Unit="2"></lvc:Axis>

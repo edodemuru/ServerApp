@@ -42,6 +42,7 @@ namespace ServerApp
             NumDevicesInterval.Add(0);
             DrawEsp32(Esp32Devices);
             DataContext = this;
+            
 
         }
 
