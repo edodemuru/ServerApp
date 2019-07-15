@@ -576,7 +576,13 @@ namespace ServerApp
 
             foreach(string s in PkFound)
             {
-                PkInInterval.AddRange(PacketFactory.Instance.GetListPacketInIntervalFromSourceMac(start, end, s));
+                List<Packet> pk = PacketFactory.Instance.GetListPacketInIntervalFromSourceMac(start, end, s);
+                if(pk!= null || pk.Count >=2)
+                {
+                    PkInInterval.Add(pk[0]);
+                    PkInInterval.Add(pk[pk.Count - 1]);
+                }
+                
             }
 
             return PkInInterval;

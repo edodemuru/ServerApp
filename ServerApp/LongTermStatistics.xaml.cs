@@ -29,72 +29,20 @@ namespace ServerApp
        //List of tuple containint all interval to be processed
        private List<Tuple<string, DateTime>> GlobalInterval;
         
-        public LongTermStatistics()
+        public LongTermStatistics(SnifferServer ServerInput)
         {
             InitializeComponent();
-            Server = new SnifferServer(3);
-            
-
-            /*SeriesCollection = new SeriesCollection
-            {
-                new LineSeries
-                {
-                    Title = "Mac1",
-                    Values = new ChartValues<ObservablePoint>
-                    {
-                        new ObservablePoint(1,1),
-                        new ObservablePoint(2,1),
-                        new ObservablePoint(double.NaN,double.NaN),
-                        
-                       
-                    }
-
-                },
-                new LineSeries
-                {
-                     Title = "Mac2",
-                    Values = new ChartValues<ObservablePoint>
-                    {
-                      
-                    }
-                },
-                new LineSeries
-                {
-                    Title = "Mac3",
-                    Values = new ChartValues<ObservablePoint>
-                    {
-                       
-                    }
-                }
-            };*/
 
 
-            //Mac = new[] { "90:fd:61:45:d9:21", "86:29:1c:d3:96:f1", "20:df:b9:99:fd:4d" };
-            
-
-            DateTime dt = new DateTime(1929, 1, 1);
-            DateTime dt2 = new DateTime(1929, 1, 4);
-            DateTime dt3 = new DateTime(1929, 1, 5);
-            DateTime dt4 = new DateTime(1929, 1, 6);
-            DateTime dt5 = new DateTime(1929, 1, 9);
-            DateTime dt6 = new DateTime(1929, 1, 10);
-            DateTime dt7 = new DateTime(1929, 1, 1);
-            DateTime dt8 = new DateTime(1929, 1, 2);
-
+            Server = ServerInput;
             
             TimeIntervalGlobal = new List<DateTime>();
             GlobalInterval = new List<Tuple<string, DateTime>>();
             Mac = new List<string>();
             Time = new List<string>();
-            SeriesCollection = new SeriesCollection();
+            SeriesCollection = new SeriesCollection();           
 
-            List<Tuple<string, DateTime>> NewInterval = new List<Tuple<string, DateTime>>();
-            NewInterval.Add(new Tuple<string, DateTime>("20:df:b9:99:fd:4d", dt));
-            NewInterval.Add(new Tuple<string, DateTime>("da:a1:19:d9:2d:a2", dt2));
-            NewInterval.Add(new Tuple<string, DateTime>("20:df:b9:99:fd:4d", dt3));
-            NewInterval.Add(new Tuple<string, DateTime>("da:a1:19:d9:2d:a2", dt4));
-
-            UpdateTimeline(NewInterval);
+         
 
             DataContext = this;
 
@@ -107,6 +55,11 @@ namespace ServerApp
             SeriesCollection SC = new SeriesCollection();
           
             List<LineSeries> ListOfMacLines = new List<LineSeries>();
+            GlobalInterval.Clear();
+            Mac.Clear();
+            Time.Clear();
+            SeriesCollection.Clear();
+            TimeIntervalGlobal.Clear();
             //Insert new intervals
             GlobalInterval.AddRange(NewInterval);
             //Sort all list of itervals
@@ -190,12 +143,25 @@ namespace ServerApp
         public List<string> Mac { get; set; }
 
         private void DateChanged(object sender, EventArgs e) {
-            
+           /* String format = "ddd MMM dd HH:mm:ss yyyy";
+            DateTime dt = (DateTime) Interval1.Value;
+            Console.WriteLine(dt.ToString(format));*/
             //Console.WriteLine( Server.ConvertStringToDateTime(Interval1.Value.ToString()).ToString());
            if(Interval1.Value != null && Interval2.Value != null)
             {
-                
-               // Server.LongTermStatisticsOnPK(Interval1.Value, Interval2.Value);
+                DateTime start = (DateTime)Interval1.Value;
+                DateTime end = (DateTime)Interval2.Value;
+                List<Packet> PkFound =  Server.LongTermStatisticsOnPK(start, end);
+                List<Tuple<string, DateTime>> MacInterval = new List<Tuple<string, DateTime>>();
+
+                foreach(Packet pk in PkFound)
+                {
+                    Tuple<string, DateTime> t = new Tuple<string, DateTime>(pk.MacSource, pk.Timestamp);
+                    MacInterval.Add(t);
+                }
+
+                UpdateTimeline(MacInterval);
+               
 
             }
 

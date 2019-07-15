@@ -9,11 +9,11 @@
         xmlns:local="clr-namespace:ServerApp"
               
         mc:Ignorable="d"
-        Title="LongTermStatistics" Height="450" Width="800">
+        Title="LongTermStatistics" Height="450" Width="800" ResizeMode="NoResize">
     <Grid>
         <lvc:CartesianChart Series="{Binding SeriesCollection}" LegendLocation="None" Margin="0,0,0,46" >
             <lvc:CartesianChart.AxisY>
-                <lvc:Axis Title="Mac" Labels="{Binding Mac}"></lvc:Axis>
+                <lvc:Axis Title="Mac" Labels="{Binding Mac}" MinValue="0"></lvc:Axis>
             </lvc:CartesianChart.AxisY>
             <lvc:CartesianChart.AxisX>
                 <lvc:Axis Title="Time" Labels="{Binding Time}"></lvc:Axis>

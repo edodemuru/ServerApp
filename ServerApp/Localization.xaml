@@ -14,7 +14,7 @@
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
         </Grid.RowDefinitions>
-        <lvc:CartesianChart Grid.Row="1" LegendLocation="Bottom" Margin="0,0,0,359">
+        <lvc:CartesianChart Grid.Row="1" LegendLocation="Bottom" Margin="0,56,0,359">
             <lvc:CartesianChart.Series>
                 <lvc:ScatterSeries Title="Esp32Devices" Values="{Binding Esp32Render}" PointGeometry="{x:Static lvc:DefaultGeometries.Triangle}" MinPointShapeDiameter="25" MaxPointShapeDiameter="25"/>
                 <lvc:ScatterSeries Title="Devices" Values="{Binding DevicesRenderer}" PointGeometry="{x:Static lvc:DefaultGeometries.Circle}" MinPointShapeDiameter="25" MaxPointShapeDiameter="25"/>
@@ -34,10 +34,23 @@
 
         <lvc:CartesianChart Margin="10,498,0,10" Grid.RowSpan="2">
             <lvc:CartesianChart.Series>
-                <lvc:StepLineSeries Values="{Binding NumDevicesInterval}"/>                
+                <lvc:StepLineSeries Values="{Binding NumDevicesInterval}"/>
             </lvc:CartesianChart.Series>
-            
+
         </lvc:CartesianChart>
+        <Button  Content ="Analisi a lungo termine" HorizontalAlignment="Left" VerticalAlignment="Top" Width="230" Height="41" FontSize="20" FontFamily="Tw Cen MT Condensed Extra Bold"
+                Background="White" Foreground="Black" Click="StartLongTermStatistics" Margin="36,10,0,0" Grid.RowSpan="2" BorderThickness="4" BorderBrush="Black">
+            <Button.Resources>
+                <Style TargetType="{x:Type Border}">
+                    <Setter Property= "CornerRadius" Value="10"/>
+                    
+                    <Setter Property="Padding" Value="10,2,10,3"/>
+                        <Setter Property="Background" Value="White"/>
+                </Style>
+            </Button.Resources>
+
+        </Button>
+
     </Grid>
 
 </Window>

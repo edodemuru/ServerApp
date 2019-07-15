@@ -29,6 +29,8 @@ namespace ServerApp
         List<Device> Devices;
         int NumDevices;
         SnifferServer Server;
+        private LongTermStatistics LongTermWindow;
+
         public Localization(List<Device> Esp32Devices,SnifferServer ServerInput)
         {
             InitializeComponent();
@@ -119,9 +121,15 @@ namespace ServerApp
         public ChartValues<DeviceLabel> DevicesRenderer { get; set; }
         public ChartValues<int> NumDevicesInterval { get; set; }
 
+        
+        private void StartLongTermStatistics(object sender, RoutedEventArgs e)
+        {
+            LongTermWindow = new LongTermStatistics(Server);
+            LongTermWindow.Owner = this;
+            LongTermWindow.ShowDialog();
 
 
 
-
+        }
     }
 }

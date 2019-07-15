@@ -374,7 +374,7 @@ namespace ServerApp
                 databaseConnection.Open();
                 string format = "yyyy-MM-dd HH:mm:ss";
 
-                String sqlQuery = "select * from (select * from (select* from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by hash,esp32_mac) as filteredPackets group by HASH HAVING count(*) = " + NumEsp32 + ") as filteredData where source_mac = " + sourceMac + " order by `filteredData`.`timestamp` ASC";
+                String sqlQuery = "select * from (select * from (select* from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by hash,esp32_mac) as filteredPackets group by HASH HAVING count(*) = " + NumEsp32 + ") as filteredData where source_mac = '" + sourceMac + "' order by `filteredData`.`timestamp` ASC";
                 MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
                 MySqlDataReader reader = cmd.ExecuteReader();
 
@@ -425,7 +425,7 @@ namespace ServerApp
                 databaseConnection.Open();
                 string format = "yyyy-MM-dd HH:mm:ss";
 
-                String sqlQuery = "select count(*) from (select * from (select* from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by hash,esp32_mac) as filteredPackets group by HASH HAVING count(*) = " + NumEsp32 + ") as filteredData GROUP by source_mac ORDER BY `count(*)` DESC LIMIT " + NumResults;
+                String sqlQuery = "select source_mac from (select * from (select* from packets where timestamp BETWEEN '" + start.ToString(format) + "' and '" + end.ToString(format) + "' group by hash,esp32_mac) as filteredPackets group by HASH HAVING count(*) = " + NumEsp32 + ") as filteredData GROUP by source_mac ORDER BY count(*) DESC LIMIT " + NumResults;
                 MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
                 MySqlDataReader reader = cmd.ExecuteReader();
 
