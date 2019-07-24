@@ -36,6 +36,7 @@ namespace ServerApp
             InitializeComponent();
             Esp32Devices = new List<Device>();
             Esp32Devices = esp32Devices;
+
             //Create new thread which supports cancellation and report progress, all controlled by events
             Server = new SnifferServer(Esp32Devices) {
                 WorkerReportsProgress = true,

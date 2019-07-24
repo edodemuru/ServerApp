@@ -15,8 +15,8 @@ using System.Globalization;
 
 namespace ServerApp
 {
-    
-    public class SnifferServer:BackgroundWorker
+
+    public class SnifferServer : BackgroundWorker
     {
 
         private int numEsp32;
@@ -43,7 +43,7 @@ namespace ServerApp
             PacketFactory.Instance.NumEsp32 = numEsp32;
         }
 
-       public void Run()
+        public void Run()
         {
             try
             {
@@ -90,12 +90,12 @@ namespace ServerApp
                 esp32.Add(esp2);
                 esp32.Add(esp3);*/
                 //Define esp32 for position
-               /* Device esp0 = new Device(10, 0);
-                Device esp1 = new Device(-10, 0);
-                Device esp2 = new Device(0, 10);
-                esp32.Add(esp0);
-                esp32.Add(esp1);
-                esp32.Add(esp2);*/
+                /* Device esp0 = new Device(10, 0);
+                 Device esp1 = new Device(-10, 0);
+                 Device esp2 = new Device(0, 10);
+                 esp32.Add(esp0);
+                 esp32.Add(esp1);
+                 esp32.Add(esp2);*/
 
 
 
@@ -170,7 +170,7 @@ namespace ServerApp
                                         Esp32.Sort();
                                         //Report that all esp32 connected to server
                                         ReportProgress(1);
-                                        
+
                                     }
 
                                 }
@@ -319,13 +319,13 @@ namespace ServerApp
                                     //if alredy present into list of position we update otherwise insert new device position
 
                                     //no matter which packet consider because they have the same mac source, to simplify choose 0
-                                    Device tmp_p = new Device((pkFiltered[0].MacSource), position[0], position[1], pkFiltered[0].Ssid, pkFiltered[0].Timestamp);
+                                    Device tmp_p = new Device((pkFiltered[0].MacSource), position[0], position[1], pkFiltered[0].Ssid, pkFiltered[0].Timestamp,pkFiltered[0].Id);
                                     int found = 0;
 
                                     list_devices.Add(tmp_p);
                                     Console.WriteLine("ID: " + pkFiltered[0].Id + " Mac device: " + tmp_p.Mac + " Coordinate: " + tmp_p.X + " " + tmp_p.Y);
 
-                                    
+
 
 
                                     /*
@@ -365,7 +365,7 @@ namespace ServerApp
                                 }
 
                                 //After 5 connections, check number of devices identified in these connections (5 connections are about 5 minute)
-                                if(numConnection == 5)
+                                if (numConnection == 5)
                                 {
                                     //Actual Time
                                     DateTime dateNow = GetNetworkTime();
@@ -380,7 +380,7 @@ namespace ServerApp
                                 }
                                 numConnection++;
 
-                               
+
                                 ReportProgress(3);
 
                                 firstIdDB = lastIdDB;
@@ -414,12 +414,12 @@ namespace ServerApp
 
 
             } catch (SocketException e)
-                {
-                    Console.WriteLine("SocketException: {0}", e);
-                }
+            {
+                Console.WriteLine("SocketException: {0}", e);
+            }
 
         }
-            
+
 
         public static DateTime GetNetworkTime()
         {
@@ -546,7 +546,7 @@ namespace ServerApp
         private DateTime ConvertStringToDateTime(String DateStr)
         {
             DateTime conversion;
-            
+
             try
             {
                 conversion = DateTime.ParseExact(DateStr, "ddd MMM dd HH:mm:ss yyyy", CultureInfo.InvariantCulture);
@@ -554,11 +554,11 @@ namespace ServerApp
             }
             catch (FormatException e)
             {
-                
+
                 conversion = DateTime.ParseExact(DateStr, "ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture);
                 return conversion;
-                
-             
+
+
 
             }
         }
@@ -572,30 +572,97 @@ namespace ServerApp
         {
             List<String> PkFound = new List<String>();
             List<Packet> PkInInterval = new List<Packet>();
-            PkFound = PacketFactory.Instance.GetMostFrequentPackets(start, end,3);
+            PkFound = PacketFactory.Instance.GetMostFrequentPackets(start, end, 3);
 
-            foreach(string s in PkFound)
+            foreach (string s in PkFound)
             {
                 List<Packet> pk = PacketFactory.Instance.GetListPacketInIntervalFromSourceMac(start, end, s);
-                if(pk!= null || pk.Count >=2)
+                if (pk != null || pk.Count >= 2)
                 {
                     PkInInterval.Add(pk[0]);
                     PkInInterval.Add(pk[pk.Count - 1]);
                 }
-                
+
             }
 
             return PkInInterval;
 
-            
+
         }
 
-      
+        public List<Device> GetPositionInInterval(DateTime start, DateTime end)
+        {
+            //create list of current position devices
+            List<Device> devicesResult = new List<Device>();
+            //Obtain packets received from all esp32
+            List<String> hashPkFiltered = PacketFactory.Instance.GetListHashFilteredInInterval(start, end);
+            //For each hash, obtain the most recent packets received from all esp32
+            foreach (String hash in hashPkFiltered)
+            {
+                //Packet List Ordered by mac esp32
+                List<Packet> pkFiltered = PacketFactory.Instance.GetListPkFilteredFromHashInInterval(hash, start, end);
+                //Console.WriteLine("Id packets filtered:");
 
-       
+                //**LEAST SQUARE ESTIMATION METHOD**/ ->see page 9 of the pdf: "sensors"
 
-        
+                double[] startVectorb = new double[numEsp32 - 1]; //b vector
+
+                Matrix<double> aMatrix = Matrix<double>.Build.Dense(numEsp32 - 1, 2); //matrix A
+                Vector<double> coordinate = Vector<double>.Build.Dense(2); //row of Matrix A
+                double rm = GetDistanceFromRssi(pkFiltered[numEsp32 - 1].Rssi); //distance from the last esp32
+                                                                                //TO REMEMBER: WE ARE USING PKFILTERED AS REFERENCE VECTOR WITH THE POSITIONS
+                                                                                /* int q = 0; //index of the last esp32
+                                                                                 for (int t = 0; t < numEsp32 - 1; t++)
+                                                                                 {
+                                                                                     if (esp32[t].Mac.Equals(pkFiltered[numEsp32-1].MacEsp32))
+                                                                                         q = t;
+                                                                                 }*/
+
+
+                for (int i = 0; i < numEsp32 - 1; i++)
+                {
+                    //distanza i-esima rilevata dalla i-esima esp32
+                    double ri = GetDistanceFromRssi(pkFiltered[i].Rssi);
+
+                 
+
+
+
+                    startVectorb[i] = Math.Pow(esp32[i].X, 2) - Math.Pow(esp32[numEsp32 - 1].X, 2) + Math.Pow(esp32[i].Y, 2) - Math.Pow(esp32[numEsp32 - 1].Y, 2) + Math.Pow(ri, 2) - Math.Pow(rm, 2);
+
+                    // System.Console.WriteLine("Riga " + i + " vettore b " + startVectorb[i]);
+                    coordinate[0] = 2 * (esp32[i].X - esp32[numEsp32 - 1].X);
+                    coordinate[1] = 2 * (esp32[i].Y - esp32[numEsp32 - 1].Y);
+            
+                    aMatrix.SetRow(i, coordinate);
+                }
+
+                Vector<double> bVector = Vector<double>.Build.Dense(startVectorb);
+
+                var posResult = ((aMatrix.Transpose() * aMatrix).Inverse()) * (aMatrix.Transpose()) * bVector; // to check NAN 
+
+                //xy cordinate based on the 4 most recent packets sniffed with the same hash
+                double[] position = posResult.ToArray();
+
+                //now we verify the identity of the device by selecting the mac_source of one of the 4 packets
+                //if alredy present into list of position we update otherwise insert new device position
+
+                //no matter which packet consider because they have the same mac source, to simplify choose 0
+                Device tmp_p = new Device((pkFiltered[0].MacSource), position[0], position[1], pkFiltered[0].Ssid, pkFiltered[0].Timestamp, pkFiltered[0].Id);
+
+                devicesResult.Add(tmp_p);
+
+
+            }
+            return devicesResult;
+
+
+
+
+
+
+        }
+
+
     }
-
-    
 }

@@ -13,6 +13,7 @@ namespace ServerApp
         private double y = 0;
         private DateTime time;
         private String ssid = "";
+        private int id = -1;
 
         //Constructor
         public Device(String mac, double xc, double yc)
@@ -64,12 +65,24 @@ namespace ServerApp
 
         }
 
+        public Device(String mac, double xc, double yc, String ssid, DateTime date, int id)
+        {
+            Mac = mac;
+            X = xc;
+            Y = yc;
+            Ssid = ssid;
+            Time = date;
+            Id = id;
+
+        }
+
         //Properties
         public string Mac { get => mac; set => mac = value; }
         public double X { get => x; set => x = value; }
         public double Y { get => y; set => y = value; }
         public DateTime Time { get => time; set => time = value; }
         public String Ssid { get => ssid; set => ssid = value; }
+        public int Id { get => id; set => id = value; }
 
         //Method to compare 2 strings, derived from 
         public int CompareTo(object obj)

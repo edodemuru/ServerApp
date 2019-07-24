@@ -171,6 +171,48 @@ namespace ServerApp
             return listHash;
         }
 
+        public List<String> GetListHashFilteredInInterval(DateTime start, DateTime end)
+        {
+            List<String> listHash = new List<String>();
+
+            try
+            {
+                MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+                databaseConnection.Open();
+
+                //Raggruppo inizialmente per hash e per esp32, così elimino i doppioni, poi faccio un ulteriore raggruppamento per hash, così da individuare i pacchetti ricevuti da entrambe le schede
+                String sqlQuery = "select hash from (select* from packets where timestamp BETWEEN '" + start + "' AND '" + end + "' group by hash,esp32_mac) as filteredPackets group by hash having count(*) = " + NumEsp32;
+
+                MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
+                MySqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    //while cicle to read the data
+                    while (reader.Read())
+                    {
+                        //each row from the data matched by the query
+                        listHash.Add(reader.GetString(0));
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+
+                //int i = cmd.ExecuteNonQuery();
+                databaseConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("error " + ex.Message);
+                return null;
+            }
+
+            return listHash;
+        }
+
 
 
         public int GetCountFromPacket(Packet p)
@@ -323,6 +365,61 @@ namespace ServerApp
             return listPackets;
         }
 
+        //Obtain list of packets from hash in specific interval
+        public List<Packet> GetListPkFilteredFromHashInInterval(String hash, DateTime start, DateTime end)
+        {
+            List<Packet> listPackets = new List<Packet>();
+
+            try
+            {
+                MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+                databaseConnection.Open();
+
+                String sqlQuery = "select * from packets where id IN(select MAX(id) from packets where hash ='" + hash + "' GROUP by esp32_mac) AND timestamp BETWEEN '" + start + "' AND '" + end + "' order by `packets`.`esp32_mac` asc";
+
+                MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
+                MySqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    //while cicle to read the data
+                    while (reader.Read())
+                    {
+                        //each row from the data matched by the query
+                        Packet tmp = new Packet();
+
+                        tmp.Id = reader.GetInt32(0);
+                        tmp.Ssid = reader.GetString(1);
+                        tmp.Channel = reader.GetInt32(2);
+                        tmp.Rssi = reader.GetInt32(3);
+                        tmp.MacSource = reader.GetString(4);
+                        tmp.MacEsp32 = reader.GetString(5);
+                        tmp.Timestamp = reader.GetDateTime(6);
+                        tmp.Hash = reader.GetString(7);
+
+                        listPackets.Add(tmp);
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No rows found.");
+                }
+
+                //int i = cmd.ExecuteNonQuery();
+                databaseConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("error " + ex.Message);
+                return null;
+            }
+
+            return listPackets;
+        }
+
+
+
         //Given time interval find number of packets in such interval
         public int GetPacketNumInInterval(DateTime start, DateTime end)
         {
@@ -456,6 +553,36 @@ namespace ServerApp
             }
 
             return packetsFound;
+
+        }
+
+        public void InsertCoordinate(List<Device> Devices)
+        {
+            List<string> packetsFound = new List<string>();
+            try
+            {
+                MySqlConnection databaseConnection = new MySqlConnection(connectionString);
+                databaseConnection.Open();
+
+                foreach (Device d in Devices) { 
+                String sqlQuery = "update packets set position_X = " + d.X + ", position_Y = " + d.Y + " where id = " + d.Id;
+                MySqlCommand cmd = new MySqlCommand(sqlQuery, databaseConnection);
+                int i = cmd.ExecuteNonQuery();
+
+                    
+            }
+
+                //int i = cmd.ExecuteNonQuery();
+                databaseConnection.Close();
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine("error " + ex.Message);
+                
+            }
+
+            
 
         }
 
